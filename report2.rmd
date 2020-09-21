@@ -1,0 +1,110 @@
+---
+title: "Guinea Pig Toothgrowth Analysis"
+author: "Mateus Melo"
+date: "15/09/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## Project Overview
+
+This project aims to analyze the effects of vitamin C on the guinea pig tooth growth, comparing the effects of using two delivery methods, orange juice and ascorbic acid, and three amount of dosages, 0.5, 1.0 and 2.0 mg.
+
+## The Data
+
+The dataset contains  the length of odontoblasts (cells responsible for tooth growth) in 60 guinea pigs. Each animal received one of three dose levels of vitamin C (0.5, 1, and 2 mg/day) by one of two delivery methods, orange juice or ascorbic acid. We start our analysis by looking at the data to understand how the dataset was build.
+
+```{r}
+
+dim(ToothGrowth)
+summary(ToothGrowth)
+str(ToothGrowth)
+
+```
+
+The dataset has 60 observations of 3 variables. There are two numerical variables, len, which represents the length of the odontoblasts and dose, which represents the amount of the supplement that was used. There is a factor variable supp, which represents the delivery method.
+
+The len variable ranges from 4.20 to 33.90 and it is centered at 19.25 with mean 18.81. The dose variable has only three possible values: 0.5, 1.0 and 2.0. The supp variable has 2 possible values: OJ (orange juice) or VC (ascorbic acid)
+
+## Exploratory Analysis
+
+Let us take a look into the data grouped in various forms.
+
+```{r message=FALSE,warning=FALSE, fig.width=6,fig.height=4}
+
+library(ggplot2)
+ggplot(data = ToothGrowth, aes(y=len, x=as.factor(dose), fill=supp))+geom_boxplot()+
+        labs(title = "Odontoblasts Length by Vitamin Dosage and Delivery Method", 
+             x="Dose", y="Length")
+```
+
+It seems that as the dose increases, the lengths increases as well with both delivery methods. Also, the OJ method leads to greater lengths with small doses.
+
+## Hypothesis Tests
+
+To make conclusions about the date, we are going to make a series of hypothesis tests using the t-student distribution assuming the following:
+
+* The data is normally distributed
+* Since we have 60 observations of 60 guinea pigs, the data is not paired and independent
+* The variances are not equal
+* The guinea pigs were randomly selected
+
+Let us start by checking if the OJ method generally leads to greater lengths.
+
+```{r}
+
+t.test(len~supp, paired=F, var.equal=F,data=ToothGrowth)$conf.int
+
+```
+
+Since the 95% interval contains the zero, we failed to reject that the means are different. However, Since we got close, let us test only with the 0.5 and 1.0 dosages.
+
+```{r}
+
+small_doses <- subset(ToothGrowth,dose<2)
+t.test(len~supp, paired=F, var.equal=F,data=small_doses)$conf.int
+
+```
+
+The confidence interval does not include zero, so we are can accept our alternative hypothesis. 
+
+Now let us see how the dosage affects the length. We are going to start comparing the 0.5 and 1.0 dosages.
+
+```{r}
+
+t.test(len~dose,paired=F,var.equal=F,data=small_doses)$conf.int
+
+```
+
+The interval does not include zero, we accept the alternative hypothesis. Let us see the 1.0 and 2.0 dosages.
+
+```{r}
+
+big_doses<-subset(ToothGrowth,dose>0.5)
+t.test(len~dose,paired=F,var.equal=F,data=big_doses)$conf.int
+
+```
+
+We are also able to accept the alternative hyphotesis. How ever, we have seen in the *Odontoblasts Length by Vitamin Dosage and Delivery Method* plot that the length growth between the 1.0 and 2.0 dosages were smaller for the OJ delivery method. Let us see if we are still able to accept de alternative hypothesis for the OJ delivery method.
+
+```{r}
+
+big_doses_oj<-subset(big_doses,supp=="OJ")
+t.test(len~dose,paired=F,var.equal=F,data=big_doses_oj)$conf.int
+
+```
+
+We are still able to accept the alternative hypothesis.
+
+## Conclusions
+
+In this analysis, we were able to conclude that the using orange juice instead of ascorbic acid as a delivery method of vitamin c leads to greater tooth growth for small doses (0.5 and 1.0 milligrams). We also conclude that greater doses of vitamin C leads to greater tooth growth for both delivery methods.
+
+
+## Appendix
+
+```{r ref.label=knitr::all_labels(), echo=TRUE, eval=FALSE}
+```
